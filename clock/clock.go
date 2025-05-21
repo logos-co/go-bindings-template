@@ -95,6 +95,7 @@ import "C"
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 	"unsafe"
@@ -229,7 +230,7 @@ func (c *Clock) parseAlarmEvent(eventStr string) {
 	alarmEvent := alarmEvent{}
 	err := json.Unmarshal([]byte(eventStr), &alarmEvent)
 	if err != nil {
-		Error("could not parse message ready event %v", err)
+		Error("could not parse alarm event %v", err)
 	}
 
 	if c.callbacks.OnAlarm != nil {
@@ -264,4 +265,26 @@ func (c *Clock) Destroy() error {
 	Error("Failed to destroy clock: %v", errMsg)
 
 	return errors.New(errMsg)
+}
+
+func (c *Clock) SetAlarm(timeMillis int, alarmMsg string) error {
+	Debug("Setting alarm in %v millis", timeMillis)
+
+	wg := sync.WaitGroup{}
+
+	var resp = C.allocResp(unsafe.Pointer(&wg))
+	var cAlarmMsg = C.CString(string(alarmMsg))
+	defer C.freeResp(resp)
+	defer C.free(unsafe.Pointer(cAlarmMsg))
+
+	wg.Add(1)
+	C.cGoClockSetAlarm(c.clockCtx, C.int(timeMillis), cAlarmMsg, resp)
+	wg.Wait()
+	if C.getRet(resp) == C.RET_OK {
+		Debug("Successfully set alarm in %v millis", timeMillis)
+		return nil
+	}
+	errMsg := "error SetAlarm: " +
+		C.GoStringN(C.getMyCharPtr(resp), C.int(C.getMyCharLen(resp)))
+	return fmt.Errorf("SetAlarm: %s", errMsg)
 }
