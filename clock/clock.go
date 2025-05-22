@@ -117,7 +117,7 @@ func GoCallback(ret C.int, msg *C.char, len C.size_t, resp unsafe.Pointer) {
 }
 
 type EventCallbacks struct {
-	OnAlarm func(time string, msg string)
+	OnAlarm func(event alarmEvent)
 }
 
 // Clock represents an instance of a nim-c-library-guide Clock
@@ -199,7 +199,7 @@ type jsonEvent struct {
 }
 
 type alarmEvent struct {
-	Time string `json:"time"`
+	Time int64  `json:"time"`
 	Msg  string `json:"msg"`
 }
 
@@ -234,7 +234,7 @@ func (c *Clock) parseAlarmEvent(eventStr string) {
 	}
 
 	if c.callbacks.OnAlarm != nil {
-		c.callbacks.OnAlarm(alarmEvent.Time, alarmEvent.Msg)
+		c.callbacks.OnAlarm(alarmEvent)
 	}
 }
 

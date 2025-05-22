@@ -25,13 +25,13 @@ func TestAlarmEvent(t *testing.T) {
 	defer clock.Destroy()
 
 	// Use a channel for signaling
-	readyChan := make(chan string, 1)
+	alarmChan := make(chan alarmEvent, 1)
 
 	callbacks := EventCallbacks{
-		OnAlarm: func(time string, msg string) {
+		OnAlarm: func(event alarmEvent) {
 			// Non-blocking send to channel
 			select {
-			case readyChan <- msg:
+			case alarmChan <- event:
 			default:
 				// Avoid blocking if channel is full or test already timed out
 			}
@@ -47,11 +47,18 @@ func TestAlarmEvent(t *testing.T) {
 
 	// Verification - Wait on channel with timeout
 	select {
-	case receivedMsg := <-readyChan:
+	case receivedAlarm := <-alarmChan:
+		epochSeconds := time.Now().Unix()
+
 		// Mark as called implicitly since we received on channel
-		if receivedMsg != alarmMsg {
-			t.Errorf("OnAlarm called with wrong alarm message: got %q, want %q", receivedMsg, alarmMsg)
+		if receivedAlarm.Msg != alarmMsg {
+			t.Errorf("OnAlarm called with wrong alarm message: got %q, want %q", receivedAlarm.Msg, alarmMsg)
 		}
+
+		if epochSeconds-receivedAlarm.Time > 1 {
+			t.Errorf("Alarm was set at %d but current time is %d", receivedAlarm.Time, epochSeconds)
+		}
+
 	case <-time.After(2 * time.Second):
 		// If timeout occurs, the channel receive failed.
 		t.Errorf("Timed out waiting for OnAlarm callback on readyChan")
