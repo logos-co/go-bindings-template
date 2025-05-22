@@ -61,7 +61,7 @@ func TestAlarmEvent(t *testing.T) {
 
 	case <-time.After(2 * time.Second):
 		// If timeout occurs, the channel receive failed.
-		t.Errorf("Timed out waiting for OnAlarm callback on readyChan")
+		t.Errorf("Timed out waiting for OnAlarm callback on alarmChan")
 	}
 
 }
