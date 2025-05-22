@@ -268,6 +268,12 @@ func (c *Clock) Destroy() error {
 }
 
 func (c *Clock) SetAlarm(timeMillis int, alarmMsg string) error {
+	if c == nil {
+		err := errors.New("clock is nil")
+		Error("Failed to set alarm %v", err)
+		return err
+	}
+
 	Debug("Setting alarm in %v millis", timeMillis)
 
 	wg := sync.WaitGroup{}
@@ -287,4 +293,53 @@ func (c *Clock) SetAlarm(timeMillis int, alarmMsg string) error {
 	errMsg := "error SetAlarm: " +
 		C.GoStringN(C.getMyCharPtr(resp), C.int(C.getMyCharLen(resp)))
 	return fmt.Errorf("SetAlarm: %s", errMsg)
+}
+
+func (c *Clock) ListAlarms() ([]Alarm, error) {
+
+	if c == nil {
+		err := errors.New("clock is nil")
+		Error("Failed to list alarms: %v", err)
+		return nil, err
+	}
+
+	Debug("Fetching scheduled alarms")
+
+	wg := sync.WaitGroup{}
+	var resp = C.allocResp(unsafe.Pointer(&wg))
+	defer C.freeResp(resp)
+
+	wg.Add(1)
+	C.cGoListAlarms(c.clockCtx, resp)
+	wg.Wait()
+
+	if C.getRet(resp) == C.RET_OK {
+		alarmsStr := C.GoStringN(C.getMyCharPtr(resp), C.int(C.getMyCharLen(resp)))
+
+		// First unmarshal into slice of strings
+		var alarmStrings []string
+		if err := json.Unmarshal([]byte(alarmsStr), &alarmStrings); err != nil {
+			Error("Failed to unmarshal alarm strings JSON: %v", err)
+			return nil, fmt.Errorf("failed to unmarshal alarm strings: %w", err)
+		}
+
+		// Then unmarshal each string into an Alarm
+		var alarms []Alarm
+		for _, alarmStr := range alarmStrings {
+			var alarm Alarm
+			if err := json.Unmarshal([]byte(alarmStr), &alarm); err != nil {
+				Error("Failed to unmarshal individual alarm JSON: %v", err)
+				return nil, fmt.Errorf("failed to unmarshal alarm: %w", err)
+			}
+			alarms = append(alarms, alarm)
+		}
+
+		Debug("Successfully fetched alarms")
+		return alarms, nil
+	}
+
+	errMsg := "error ListAlarms: " + C.GoStringN(C.getMyCharPtr(resp), C.int(C.getMyCharLen(resp)))
+	Error("Failed to list alarms: %v", errMsg)
+
+	return nil, errors.New(errMsg)
 }

@@ -38,12 +38,12 @@ func TestAlarmEvent(t *testing.T) {
 		},
 	}
 
+	// Register alarm callback
+	clock.RegisterCallbacks(callbacks)
+
 	alarmMsg := "this is my alarm"
 	err = clock.SetAlarm(1000, alarmMsg)
 	require.NoError(t, err)
-
-	// Register callback only on the receiver
-	clock.RegisterCallbacks(callbacks)
 
 	// Verification - Wait on channel with timeout
 	select {
@@ -63,5 +63,37 @@ func TestAlarmEvent(t *testing.T) {
 		// If timeout occurs, the channel receive failed.
 		t.Errorf("Timed out waiting for OnAlarm callback on alarmChan")
 	}
+
+}
+
+func TestListAlarms(t *testing.T) {
+	clock, err := NewClock()
+	require.NoError(t, err)
+	require.NotNil(t, clock, "Expected Clock to be not nil")
+
+	defer clock.Destroy()
+
+	// fist try to getch alarms when empty
+	alarms, err := clock.ListAlarms()
+	require.NoError(t, err)
+
+	require.Equal(t, len(alarms), 0, "Expected to be no scheduled alarms")
+
+	alarmMsg := "this is my alarm"
+	err = clock.SetAlarm(1000, alarmMsg)
+	require.NoError(t, err)
+
+	err = clock.SetAlarm(5000, alarmMsg)
+	require.NoError(t, err)
+
+	alarms, err = clock.ListAlarms()
+	require.NoError(t, err)
+	require.Equal(t, len(alarms), 2, "Expected to be two alarms scheduled")
+
+	time.Sleep(2 * time.Second)
+
+	alarms, err = clock.ListAlarms()
+	require.NoError(t, err)
+	require.Equal(t, len(alarms), 1, "Expected to be one alarm scheduled")
 
 }
