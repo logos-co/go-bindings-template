@@ -1,3 +1,37 @@
+/*  Clock Go Bindings
+ *  This file defines the Go wrappers for the libclock functions, and the necessary data
+ *  functions and data structures in order to interact with the library.
+ *
+ *  IMPLEMENTATION STEPS:
+ *  1. Rename this file to `<your_library_name>.go`
+ *  2. Update the package name from `clock` to your library's name
+ *  3. Update the C library linking flags:
+ *     - Change LDFLAGS paths to point to your C library build directory
+ *     - Change -lclock to -l<your_library_name>
+ *     - Update the #include path to your library's header file
+ *  4. Replace C function calls in the static wrapper functions:
+ *     - Replace clock_new, clock_destroy, clock_set_alarm, etc. with your library's functions
+ *     - Update function signatures to match your library's API
+ *  5. Update the Go struct types:
+ *     - Rename Clock struct to your main library object type
+ *     - Replace EventCallbacks struct with callbacks relevant to your library
+ *     - Remove alarmEvent and create event types for your library's events
+ *  6. Update the registry functions:
+ *     - Rename clockRegistry, registerClock, unregisterClock to match your object type
+ *  7. Modify the event handling:
+ *     - Update globalEventCallback to handle your library's events
+ *     - Replace the "clock_alarm" case with your library's event types
+ *     - Create parsing functions for each of your library's events
+ *  8. Replace the example methods:
+ *     - Remove SetAlarm and ListAlarms methods
+ *     - Add methods that correspond to your library's functionality
+ *     - Update method implementations to call your library's C functions
+ *  9. Update data structures:
+ *     - Remove the Alarm type and create types that match your library's data structures
+ *  10. Update error handling and logging messages to reflect your library's context
+ *  11. Test the bindings with your specific C library to ensure proper integration
+ */
+
 package clock
 
 /*
@@ -97,12 +131,8 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 	"unsafe"
 )
-
-const requestTimeout = 30 * time.Second
-const EventChanBufferSize = 1024
 
 //export GoCallback
 func GoCallback(ret C.int, msg *C.char, len C.size_t, resp unsafe.Pointer) {
@@ -116,11 +146,14 @@ func GoCallback(ret C.int, msg *C.char, len C.size_t, resp unsafe.Pointer) {
 	}
 }
 
+// TODO: remove `OnAlarm` callback and add any event callback you want to support
 type EventCallbacks struct {
 	OnAlarm func(event alarmEvent)
 }
 
 // Clock represents an instance of a nim-c-library-guide Clock
+// TODO: create a type that represents your library's main object
+// you can add fields as needed, but keep the `ctx` and `callbacks` fields
 type Clock struct {
 	clockCtx  unsafe.Pointer
 	callbacks EventCallbacks
@@ -159,12 +192,14 @@ func NewClock() (*Clock, error) {
 // so we can later obtain which instance of `Clock` it should
 // be invoked depending on the ctx received
 
+// TODO: rename and adapt types to your library's needs
 var clockRegistry map[unsafe.Pointer]*Clock
 
 func init() {
 	clockRegistry = make(map[unsafe.Pointer]*Clock)
 }
 
+// TODO: rename and adapt types to your library's needs
 func registerClock(clock *Clock) {
 	_, ok := clockRegistry[clock.clockCtx]
 	if !ok {
@@ -172,6 +207,7 @@ func registerClock(clock *Clock) {
 	}
 }
 
+// TODO: rename and adapt types to your library's needs
 func unregisterClock(clock *Clock) {
 	delete(clockRegistry, clock.clockCtx)
 }
@@ -198,6 +234,8 @@ type jsonEvent struct {
 	EventType string `json:"eventType"`
 }
 
+// TODO: remove this type and create equivalent types for every event of
+// your library
 type alarmEvent struct {
 	Time int64  `json:"time"`
 	Msg  string `json:"msg"`
@@ -217,6 +255,8 @@ func (c *Clock) OnEvent(eventStr string) {
 		return
 	}
 
+	// TODO: remove the handling of the "cloch_alarm" event and
+	// add "case" statements for each event that your library triggers
 	switch jsonEvent.EventType {
 	case "clock_alarm":
 		c.parseAlarmEvent(eventStr)
@@ -225,6 +265,9 @@ func (c *Clock) OnEvent(eventStr string) {
 
 }
 
+// TODO: adapt to any event your library may trigger
+// if there's many different events, make one instance of this
+// function for each event and add any additional logic if needed
 func (c *Clock) parseAlarmEvent(eventStr string) {
 
 	alarmEvent := alarmEvent{}
@@ -238,6 +281,8 @@ func (c *Clock) parseAlarmEvent(eventStr string) {
 	}
 }
 
+// TODO: replace `cGoClockDestroy` with your library's equivalent
+// and make any adjustments if needed
 func (c *Clock) Destroy() error {
 	if c == nil {
 		err := errors.New("clock is nil")
@@ -267,6 +312,7 @@ func (c *Clock) Destroy() error {
 	return errors.New(errMsg)
 }
 
+// TODO: remove (as this is only an example function)
 func (c *Clock) SetAlarm(timeMillis int, alarmMsg string) error {
 	if c == nil {
 		err := errors.New("clock is nil")
@@ -295,6 +341,7 @@ func (c *Clock) SetAlarm(timeMillis int, alarmMsg string) error {
 	return fmt.Errorf("SetAlarm: %s", errMsg)
 }
 
+// TODO: remove (as this is only an example function)
 func (c *Clock) ListAlarms() ([]Alarm, error) {
 
 	if c == nil {
