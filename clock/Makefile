@@ -1,8 +1,15 @@
 # Makefile for the Go Bindings Clock example
+#
+# IMPLEMENTATION STEPS:
+# 1. Change name and assignment of `EXAMPLE_LIB_REPO` for a name and url to your library
+# 2. Change name and assignment of `EXAMPLE_LIB_DIR` for a name and path of your library
+# 3. Rename all `clock` instances to your library's name
 
 # Directories
 THIRD_PARTY_DIR := ../third_party
+# TODO: rename and set your library's url
 EXAMPLE_LIB_REPO := https://github.com/status-im/nim-c-library-guide
+# TODO: rename and set your library's path
 EXAMPLE_LIB_DIR := $(THIRD_PARTY_DIR)/nim-c-library-guide
 
 .PHONY: all clean prepare build-libclock build

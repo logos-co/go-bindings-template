@@ -1,3 +1,6 @@
+// Test file for example Clock library's Go bindings
+// Rename this file and replace the tests for your library's tests
+
 package clock
 
 import (
