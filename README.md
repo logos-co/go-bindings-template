@@ -8,7 +8,7 @@ For an example on how it looks on how to integrate the module in other Go projec
 
 ### How to build
 
-Build the dependencies by running in the `go-bindings` directory:
+Build the dependencies by running in the root directory of the repository:
 
 ```
 make -C clock
@@ -16,7 +16,7 @@ make -C clock
 
 ### How to test
 
-in the `go-bindings` directory, please run
+in the root directory of the repository, please run
 
 ```
 go test -v ./...
