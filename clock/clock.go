@@ -35,10 +35,10 @@
 package clock
 
 /*
-	#cgo LDFLAGS: -L../third_party/nim-c-library-guide/build/ -lclock
-	#cgo LDFLAGS: -L../third_party/nim-c-library-guide -Wl,-rpath,../third_party/nim-c-library-guide/build/
+	#cgo LDFLAGS: -L../third_party/nim-library-template/build/ -lclock
+	#cgo LDFLAGS: -L../third_party/nim-library-template -Wl,-rpath,../third_party/nim-library-template/build/
 
-	#include "../third_party/nim-c-library-guide/library/libclock.h"
+	#include "../third_party/nim-library-template/library/libclock.h"
 	#include <stdio.h>
 	#include <stdlib.h>
 
@@ -151,7 +151,7 @@ type EventCallbacks struct {
 	OnAlarm func(event alarmEvent)
 }
 
-// Clock represents an instance of a nim-c-library-guide Clock
+// Clock represents an instance of a nim-library-template Clock
 // TODO: create a type that represents your library's main object
 // you can add fields as needed, but keep the `ctx` and `callbacks` fields
 type Clock struct {

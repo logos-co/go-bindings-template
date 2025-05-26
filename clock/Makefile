@@ -8,9 +8,9 @@
 # Directories
 THIRD_PARTY_DIR := ../third_party
 # TODO: rename and set your library's url
-EXAMPLE_LIB_REPO := https://github.com/status-im/nim-c-library-guide
+EXAMPLE_LIB_REPO := https://github.com/logos-co/nim-library-template
 # TODO: rename and set your library's path
-EXAMPLE_LIB_DIR := $(THIRD_PARTY_DIR)/nim-c-library-guide
+EXAMPLE_LIB_DIR := $(THIRD_PARTY_DIR)/nim-library-template
 
 .PHONY: all clean prepare build-libclock build
 
