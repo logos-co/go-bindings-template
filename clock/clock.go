@@ -255,7 +255,7 @@ func (c *Clock) OnEvent(eventStr string) {
 		return
 	}
 
-	// TODO: remove the handling of the "cloch_alarm" event and
+	// TODO: remove the handling of the "clock_alarm" event and
 	// add "case" statements for each event that your library triggers
 	switch jsonEvent.EventType {
 	case "clock_alarm":
