@@ -18,7 +18,6 @@ EXAMPLE_LIB_DIR := $(THIRD_PARTY_DIR)/nim-library-template
 all: build
 
 # Prepare third_party directory and clone the example library
-# TODO: remove the "git checkout feat-initial-version" part
 prepare:
 	@echo "Creating third_party directory..."
 	@mkdir -p $(THIRD_PARTY_DIR)
@@ -28,7 +27,6 @@ prepare:
 		cd $(THIRD_PARTY_DIR) && \
 		git clone $(EXAMPLE_LIB_REPO) && \
 		cd $(EXAMPLE_LIB_DIR) && \
-		git checkout feat-initial-version; \
 		make update; \
 	else \
 		echo "example library repository already exists."; \
