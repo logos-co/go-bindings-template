@@ -12,24 +12,26 @@
  *  4. Replace C function calls in the static wrapper functions:
  *     - Replace clock_new, clock_destroy, clock_set_alarm, etc. with your library's functions
  *     - Update function signatures to match your library's API
- *  5. Update the Go struct types:
+ *  5. Rename clockGlobalEventCallback, ClockResp and ClockGoCallback by replacing the "Clock"
+ *		prefix with <YourLibraryName>. Remember to also update the names everywhere they are used.
+ *	6. Update the Go struct types:
  *     - Rename Clock struct to your main library object type
  *     - Replace EventCallbacks struct with callbacks relevant to your library
  *     - Remove alarmEvent and create event types for your library's events
- *  6. Update the registry functions:
+ *  7. Update the registry functions:
  *     - Rename clockRegistry, registerClock, unregisterClock to match your object type
- *  7. Modify the event handling:
- *     - Update globalEventCallback to handle your library's events
+ *  8. Modify the event handling:
+ *     - Update clockGlobalEventCallback to handle your library's events
  *     - Replace the "clock_alarm" case with your library's event types
  *     - Create parsing functions for each of your library's events
- *  8. Replace the example methods:
+ *  9. Replace the example methods:
  *     - Remove SetAlarm and ListAlarms methods
  *     - Add methods that correspond to your library's functionality
  *     - Update method implementations to call your library's C functions
- *  9. Update data structures:
+ *  10. Update data structures:
  *     - Remove the Alarm type and create types that match your library's data structures
- *  10. Update error handling and logging messages to reflect your library's context
- *  11. Test the bindings with your specific C library to ensure proper integration
+ *  11. Update error handling and logging messages to reflect your library's context
+ *  12. Test the bindings with your specific C library to ensure proper integration
  */
 
 package clock
@@ -42,17 +44,17 @@ package clock
 	#include <stdio.h>
 	#include <stdlib.h>
 
-	extern void globalEventCallback(int ret, char* msg, size_t len, void* userData);
+	extern void clockGlobalEventCallback(int ret, char* msg, size_t len, void* userData);
 
 	typedef struct {
 		int ret;
 		char* msg;
 		size_t len;
 		void* ffiWg;
-	} Resp;
+	} ClockResp;
 
 	static void* allocResp(void* wg) {
-		Resp* r = calloc(1, sizeof(Resp));
+		ClockResp* r = calloc(1, sizeof(ClockResp));
 		r->ffiWg = wg;
 		return r;
 	}
@@ -67,7 +69,7 @@ package clock
 		if (resp == NULL) {
 			return NULL;
 		}
-		Resp* m = (Resp*) resp;
+		ClockResp* m = (ClockResp*) resp;
 		return m->msg;
 	}
 
@@ -75,7 +77,7 @@ package clock
 		if (resp == NULL) {
 			return 0;
 		}
-		Resp* m = (Resp*) resp;
+		ClockResp* m = (ClockResp*) resp;
 		return m->len;
 	}
 
@@ -83,45 +85,45 @@ package clock
 		if (resp == NULL) {
 			return 0;
 		}
-		Resp* m = (Resp*) resp;
+		ClockResp* m = (ClockResp*) resp;
 		return m->ret;
 	}
 
 	// resp must be set != NULL in case interest on retrieving data from the callback
-	void GoCallback(int ret, char* msg, size_t len, void* resp);
+	void ClockGoCallback(int ret, char* msg, size_t len, void* resp);
 
 	static void* cGoNewClock(void* resp) {
 		// We pass NULL because we are not interested in retrieving data from this callback
-		void* ret = clock_new((ClockCallBack) GoCallback, resp);
+		void* ret = clock_new((ClockCallBack) ClockGoCallback, resp);
 		return ret;
 	}
 
 	static void cGoSetEventCallback(void* clockCtx) {
-		// The 'globalEventCallback' Go function is shared amongst all possible Clock instances.
+		// The 'clockGlobalEventCallback' Go function is shared amongst all possible Clock instances.
 
-		// Given that the 'globalEventCallback' is shared, we pass again the
+		// Given that the 'clockGlobalEventCallback' is shared, we pass again the
 		// clockCtx instance but in this case is needed to pick up the correct method
 		// that will handle the event.
 
-		// In other words, for every call libclock makes to globalEventCallback,
+		// In other words, for every call libclock makes to clockGlobalEventCallback,
 		// the 'userData' parameter will bring the context of the clock that registered
-		// that globalEventCallback.
+		// that clockGlobalEventCallback.
 
 		// This technique is needed because cgo only allows to export Go functions and not methods.
 
-		clock_set_event_callback(clockCtx, (ClockCallBack) globalEventCallback, clockCtx);
+		clock_set_event_callback(clockCtx, (ClockCallBack) clockGlobalEventCallback, clockCtx);
 	}
 
 	static void cGoClockDestroy(void* clockCtx, void* resp) {
-		clock_destroy(clockCtx, (ClockCallBack) GoCallback, resp);
+		clock_destroy(clockCtx, (ClockCallBack) ClockGoCallback, resp);
 	}
 
 	static void cGoClockSetAlarm(void* clockCtx, int timeMillis, const char* alarmMsg, void* resp) {
-		clock_set_alarm(clockCtx, timeMillis, alarmMsg, (ClockCallBack) GoCallback, resp);
+		clock_set_alarm(clockCtx, timeMillis, alarmMsg, (ClockCallBack) ClockGoCallback, resp);
 	}
 
 	static void cGoListAlarms(void* clockCtx, void* resp) {
-		clock_list_alarms(clockCtx, (ClockCallBack) GoCallback, resp);
+		clock_list_alarms(clockCtx, (ClockCallBack) ClockGoCallback, resp);
 	}
 
 */
@@ -134,10 +136,10 @@ import (
 	"unsafe"
 )
 
-//export GoCallback
-func GoCallback(ret C.int, msg *C.char, len C.size_t, resp unsafe.Pointer) {
+//export ClockGoCallback
+func ClockGoCallback(ret C.int, msg *C.char, len C.size_t, resp unsafe.Pointer) {
 	if resp != nil {
-		m := (*C.Resp)(resp)
+		m := (*C.ClockResp)(resp)
 		m.ret = ret
 		m.msg = msg
 		m.len = len
@@ -212,8 +214,8 @@ func unregisterClock(clock *Clock) {
 	delete(clockRegistry, clock.clockCtx)
 }
 
-//export globalEventCallback
-func globalEventCallback(callerRet C.int, msg *C.char, len C.size_t, userData unsafe.Pointer) {
+//export clockGlobalEventCallback
+func clockGlobalEventCallback(callerRet C.int, msg *C.char, len C.size_t, userData unsafe.Pointer) {
 	if callerRet == C.RET_OK {
 		eventStr := C.GoStringN(msg, C.int(len))
 		clock, ok := clockRegistry[userData] // userData contains clock's ctx
@@ -223,9 +225,9 @@ func globalEventCallback(callerRet C.int, msg *C.char, len C.size_t, userData un
 	} else {
 		if len != 0 {
 			errMsg := C.GoStringN(msg, C.int(len))
-			Error("globalEventCallback retCode not ok, retCode: %v: %v", callerRet, errMsg)
+			Error("clockGlobalEventCallback retCode not ok, retCode: %v: %v", callerRet, errMsg)
 		} else {
-			Error("globalEventCallback retCode not ok, retCode: %v", callerRet)
+			Error("clockGlobalEventCallback retCode not ok, retCode: %v", callerRet)
 		}
 	}
 }
