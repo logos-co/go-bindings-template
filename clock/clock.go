@@ -14,7 +14,7 @@
  *     - Update function signatures to match your library's API
  *  5. Rename clockGlobalEventCallback, ClockResp and ClockGoCallback by replacing the "Clock"
  *		prefix with <YourLibraryName>. Remember to also update the names everywhere they are used.
- *	6. Update the Go struct types:
+ *  6. Update the Go struct types:
  *     - Rename Clock struct to your main library object type
  *     - Replace EventCallbacks struct with callbacks relevant to your library
  *     - Remove alarmEvent and create event types for your library's events
